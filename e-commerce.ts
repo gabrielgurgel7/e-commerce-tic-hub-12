@@ -1,3 +1,4 @@
+// MODELS BASE:
 interface Category {
   id: number;
   name: string;
@@ -10,21 +11,22 @@ interface Product {
   category: Category;
 }
 
-interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
+// GERENCIAMENTO DE USUÁRIOS: 
 type userRole = "ADMIN" | "CUSTOMER";
 
-
-class user {
+class User {
   constructor(
     public id: number,
     public username: string,
     public email: string,
     public role: userRole,
   ) {}
+}
+
+// CARRINHO: 
+interface CartItem {
+  product: Product;
+  quantity: number;
 }
 
 class Cart {
