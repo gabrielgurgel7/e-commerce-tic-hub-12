@@ -67,21 +67,21 @@ class Cart {
 const category: Category = {
     id: 1,
     name: 'Instrumentos'
-};
+}
 
 const product1: Product = {
     id: 1,
     name: 'Guitarra',
     price: 1500,
     category
-};
+}
 
 const product2: Product = {
     id: 2,
     name: 'Violão',
     price: 800,
     category
-};
+}
 
 const cart = new Cart();
 
