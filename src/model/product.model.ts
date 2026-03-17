@@ -1,8 +1,10 @@
+import type { Category } from './category.model'
+
 export class Product {
   constructor(
-    public title: string,
-    public description: string,
+    public id: number,
+    public name: string,
     public price: number,
-    public discount: number,
+    public category: Category,
   ) {}
 }
