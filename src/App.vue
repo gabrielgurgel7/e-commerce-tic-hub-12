@@ -14,21 +14,18 @@ export default {
   },
   methods: {
     addItem(product: Product) {
-      const existItem = this.cart.list.some((item) => item.product.title === product.title)
-      if (existItem) {
-        this.cart.list.map((item) => {
-          if (item.product.title === product.title) {
-            return {
-              product: item.product,
-              quantity: item.quantity + 1,
-            }
-          }
-        })
-        this.cart.total += 1
+      const item = this.cart.list.find((item) => item.product.title === product.title)
+
+      if (item) {
+        item.quantity++
       } else {
-        this.cart.list.push({ product, quantity: 1 })
-        this.cart.total += 1
+        this.cart.list.push({
+          product,
+          quantity: 1,
+        })
       }
+
+      this.cart.total++
     },
     decItem() {
       this.cart.total -= 1
@@ -40,16 +37,19 @@ export default {
 
 <template>
   <main>
-    <div v-for="product in products">
-      <ProductCard :product="product" @on-click="addItem" />
+    <div v-for="product in products" :key="product.title">
+      <ProductCard :product="product" @on-click="addItem(product)" />
     </div>
   </main>
+
   <div>
     <h1>Carrinho</h1>
-    <div v-for="item in cart.list">
+
+    <div v-for="item in cart.list" :key="item.product.title">
       <h1>{{ item.product.title }}</h1>
       <p>{{ item.quantity }}</p>
     </div>
-    <p>Total:{{ cart.total }}</p>
+
+    <p>Total: {{ cart.total }}</p>
   </div>
 </template>

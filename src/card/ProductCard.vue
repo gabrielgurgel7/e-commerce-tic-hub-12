@@ -2,7 +2,7 @@
   <article>
     <h1>{{ product?.title }}</h1>
     <p>{{ product?.description }}</p>
-    <p>R${{ product?.price.toFixed(2).replace('.', ',') }}</p>
+    <p>R${{ product?.price?.toFixed(2).replace('.', ',') }}</p>
     <button @click="addItem(product!)">Adicionar</button>
   </article>
 </template>
@@ -16,10 +16,10 @@ export default defineComponent({
       type: Object as PropType<Product>,
     },
   },
-  emits: ['onClick'],
+  emits: ['add-item'],
   methods: {
     addItem(product: Product) {
-      this.$emit('onClick', product)
+      this.$emit('add-item', product)
     },
   },
 })
