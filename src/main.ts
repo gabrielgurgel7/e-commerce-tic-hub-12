@@ -1,4 +1,4 @@
-// import './assets/main.css'
+import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -25,7 +25,8 @@ app.use(PrimeVue, {
 })
 
 app.use(ConfirmationService)
-app.use(createPinia())
 app.use(router)
+app.use(PrimeVue)
+app.use(createPinia())
 
 app.mount('#app')
