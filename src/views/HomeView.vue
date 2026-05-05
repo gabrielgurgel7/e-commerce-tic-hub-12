@@ -1,132 +1,230 @@
-<script lang="ts">
-import { Category } from '@/model/category.model'
-import { Product } from '@/model/product.model'
-import { Cart } from '@/model/cart.model'
-import ProductCard from '@/components/ProductCard.vue'
-import PrimeButton from 'primevue/button'
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { products } from '@/data/products'
+import { useCartStore } from '@/stores/cart'
+import { useToast } from 'primevue/usetoast'
 import Card from 'primevue/card'
-import InputNumber from 'primevue/inputnumber'
-import ConfirmDialog from 'primevue/confirmdialog'
-import { useConfirm } from 'primevue/useconfirm'
+import Button from 'primevue/button'
+import Rating from 'primevue/rating'
+import InputText from 'primevue/inputtext'
+import SelectButton from 'primevue/selectbutton'
+import Toast from 'primevue/toast'
+import Tag from 'primevue/tag'
 
-export default {
-  setup() {
-    const confirm = useConfirm()
-    return { confirm }
-  },
-  data() {
-    const guitar = new Category(1, 'Instrumentos')
-    const accessory = new Category(2, 'Acessórios')
-    return {
-      cart: new Cart(),
-      products: [
-        new Product(1, 'Guitarra Tagima', 1500, guitar),
-        new Product(2, 'Violão Seizi', 800, guitar),
-        new Product(3, 'Palheta Dunlop', 5, accessory),
-      ],
-    }
-  },
+const router = useRouter()
+const cart = useCartStore()
+const toast = useToast()
 
-  methods: {
-    addItem(product: Product) {
-      this.cart.addItem(product)
-    },
+const search = ref('')
+const selectedCategory = ref('Todos')
 
-    removeItem(product: Product) {
-      this.cart.removeItem(product)
-    },
+const categories = computed(() => ['Todos', ...new Set(products.map((p) => p.category))])
 
-    confirmClearCart() {
-      this.confirm.require({
-        message: 'Tem certeza que deseja limpar o carrinho?',
-        header: 'Confirmação',
-        icon: 'pi pi-exclamation-triangle',
-        acceptLabel: 'Sim',
-        rejectLabel: 'Cancelar',
+const filtered = computed(() => {
+  return products.filter((p) => {
+    const matchCat = selectedCategory.value === 'Todos' || p.category === selectedCategory.value
+    const matchSearch = p.name.toLowerCase().includes(search.value.toLowerCase())
+    return matchCat && matchSearch
+  })
+})
 
-        accept: () => {
-          this.cart.list = []
-        },
-      })
-    },
-  },
+function formatPrice(val: number) {
+  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
 
-  components: {
-    ProductCard,
-    PrimeButton,
-    Card,
-    InputNumber,
-    ConfirmDialog,
-  },
+function addToCart(p: (typeof products)[0]) {
+  cart.addItem({ id: p.id, name: p.name, price: p.price, image: p.image })
+  toast.add({
+    severity: 'success',
+    summary: 'Adicionado!',
+    detail: `${p.name} no carrinho.`,
+    life: 2500,
+  })
 }
 </script>
 
 <template>
-  <main class="p-6">
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      <ProductCard
-        v-for="product in products"
-        :key="product.id"
-        :product="product"
-        @add-item="addItem"
-      />
+  <Toast />
+  <div class="home-view">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-content">
+        <h1 class="hero-title">Tecnologia que <span class="hero-accent">inspira</span></h1>
+        <p class="hero-sub">Os melhores produtos tech com entrega rápida e garantia estendida.</p>
+      </div>
     </div>
-  </main>
 
-  <div class="p-6">
-    <Card class="p-6 mt-6 shadow-lg rounded-2xl">
-      <template #title>
-        <h1 class="text-xl font-bold">Carrinho</h1>
-      </template>
+    <!-- Filtros -->
+    <div class="filters">
+      <InputText v-model="search" placeholder="Buscar produto..." class="search-input" />
+      <SelectButton v-model="selectedCategory" :options="categories" />
+    </div>
 
-      <template #content>
-        <div v-if="cart.list.length === 0" class="text-center text-gray-500">
-          <i class="pi pi-shopping-cart"></i>
-          <p>Seu carrinho está vazio</p>
-        </div>
-
-        <div v-else class="space-y-4">
-          <div
-            v-for="item in cart.list"
-            :key="item.product.id"
-            class="flex justify-between items-center"
-          >
-            <div>
-              <p class="font-semibold">{{ item.product.name }}</p>
-              <p class="text-sm text-gray-500">R$ {{ item.product.price }}</p>
-            </div>
-
-            <InputNumber
-              :modelValue="item.quantity"
-              showButtons
-              buttonLayout="horizontal"
-              incrementButtonIcon="pi pi-plus"
-              decrementButtonIcon="pi pi-minus"
-              @update:modelValue="
-                (value) => {
-                  if (value > item.quantity) addItem(item.product)
-                  else removeItem(item.product)
-                }
-              "
+    <!-- Grid de produtos -->
+    <div class="product-grid">
+      <Card
+        v-for="product in filtered"
+        :key="product.id"
+        class="product-card"
+        @click="router.push({ name: 'product-detail', params: { id: product.id } })"
+      >
+        <template #header>
+          <div class="card-img-wrap">
+            <img :src="product.image" :alt="product.name" class="card-img" />
+            <Tag :value="product.category" class="card-category" />
+            <Tag
+              v-if="product.stock <= 10"
+              value="Últimas unidades"
+              severity="warn"
+              class="card-stock"
             />
           </div>
-        </div>
-      </template>
+        </template>
+        <template #content>
+          <h3 class="product-name">{{ product.name }}</h3>
+          <Rating :modelValue="product.rating" readonly :cancel="false" class="product-rating" />
+          <p class="product-price">{{ formatPrice(product.price) }}</p>
+        </template>
+        <template #footer>
+          <div class="card-footer" @click.stop>
+            <Button
+              label="Ver detalhes"
+              icon="pi pi-eye"
+              severity="secondary"
+              size="small"
+              @click="router.push({ name: 'product-detail', params: { id: product.id } })"
+            />
+            <Button
+              icon="pi pi-cart-plus"
+              severity="primary"
+              size="small"
+              @click="addToCart(product)"
+              v-tooltip.top="'Adicionar ao carrinho'"
+            />
+          </div>
+        </template>
+      </Card>
+    </div>
 
-      <template #footer>
-        <div class="mt-4">
-          <p>Total de itens: {{ cart.getTotalItems() }}</p>
-          <p class="font-bold">Total: {{ cart.formatPrice(cart.getTotalPrice()) }}</p>
-          <PrimeButton
-            label="Limpar Carrinho"
-            icon="pi pi-trash"
-            severity="danger"
-            class="mt-4 w-full"
-            @click="confirmClearCart"
-          />
-        </div>
-      </template>
-    </Card>
+    <p v-if="filtered.length === 0" class="empty-state">Nenhum produto encontrado.</p>
   </div>
-  <ConfirmDialog />
 </template>
+
+<style scoped>
+.home-view {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.hero {
+  background: linear-gradient(
+    135deg,
+    var(--p-primary-600, #4f46e5) 0%,
+    var(--p-primary-400, #818cf8) 100%
+  );
+  border-radius: 16px;
+  padding: 3rem 2.5rem;
+  color: white;
+}
+
+.hero-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+}
+
+.hero-accent {
+  opacity: 0.85;
+  text-decoration: underline wavy rgba(255, 255, 255, 0.5);
+}
+.hero-sub {
+  font-size: 1.05rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  width: 260px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.product-card {
+  cursor: pointer;
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.card-img-wrap {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-category {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.card-stock {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.product-rating {
+  margin-bottom: 0.5rem;
+}
+
+.product-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--p-primary-color);
+  margin: 0;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--p-text-muted-color);
+  padding: 3rem;
+}
+</style>
